@@ -1,0 +1,12 @@
+*.npy
+*.npz
+*.pkl
+*.json
+*.png
+*.zip
+generated/*
+nn_models/*
+data/*
+.idea/
+**/c_generated_code/
+**/__pycache__/
