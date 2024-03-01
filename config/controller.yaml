@@ -1,0 +1,20 @@
+T: 1                      # horizon in seconds
+prob_num: 5000            # number of OCP to create training dataset
+test_num: 500             #   "    "   "  "    "    test dataset
+
+n_steps: 200              # number of time steps in each test
+cpu_num: 24
+regenerate: true          # regenerate data
+
+solver_mode: 'BALANCE'    # HPIPM mode, can be --> 'BALANCE', 'ROBUST', 'SPEED', 'SPEED_ABS'
+nlp_max_iter: 1000
+qp_max_iter: 100
+qp_tol_stat: 1e-3         # QP solver tolerance on stationary residuals
+nlp_tol_stat: 1e-3        # NLP solver tolerance on stationary residuals
+alpha: 2
+alpha_reduction: 0.3
+alpha_min: 1e-2
+levenberg_marquardt: 1e-5
+
+conv_tol: 1e-3            # convergence tolerance for the task
+cost_tol: 1e-3            # Tolerance for the cost
