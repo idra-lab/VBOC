@@ -54,6 +54,9 @@ class ViabilityController(AbstractController):
         N = N_start
         gamma = 0
         x_sol, u_sol = None, None
+        if n == 0:
+            # N-BRS --> constant horizon N, no need to repeat the process until convergence 
+            repeat = 1
         for _ in range(repeat):
             # Solve the OCP
             status = self.solve(q, d)
@@ -63,7 +66,7 @@ class ViabilityController(AbstractController):
                 gamma_new = np.linalg.norm(x0[self.model.nq:])
 
                 if gamma_new < gamma + self.tol:
-                    return x_sol, u_sol, N
+                    break
                 gamma = gamma_new
 
                 # Rollout the solution
@@ -82,3 +85,4 @@ class ViabilityController(AbstractController):
                 self.resetHorizon(N)
             else:
                 return None, None, None
+        return x_sol, u_sol, N

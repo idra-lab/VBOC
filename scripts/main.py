@@ -43,11 +43,11 @@ def computeDataOnBorder(N_guess, test_flag=0):
     controller.setGuess(x_guess, u_guess)
 
     # Solve the OCP
-    x_star, u_star, N = controller.solveVBOC(q, d, N_guess, repeat=50)
+    x_star, u_star, N = controller.solveVBOC(q, d, N_guess, n=N_increment, repeat=50)
     if x_star is None:
-        return None
+        return None, None
     if test_flag:
-        return x_star[0]
+        return x_star[0], x_star
     # Add a final node
     x_star = np.vstack([x_star, x_star[-1]])
     # Save the initial state as valid data
@@ -75,7 +75,7 @@ def computeDataOnBorder(N_guess, test_flag=0):
                 d /= np.linalg.norm(d)
                 controller.resetHorizon(N - j)
                 controller.setGuess(x_star[j:N], u_star[j:N])
-                x_new, u_new, _ = controller.solveVBOC(x_star[j, :model.nq], d, N - j, repeat=5)
+                x_new, u_new, _ = controller.solveVBOC(x_star[j, :model.nq], d, N - j, n=N_increment, repeat=5)
                 if x_new is not None:
                     x0 = controller.ocp_solver.get(0, 'x')
                     gamma_new = np.linalg.norm(x0[model.nq:])
@@ -108,7 +108,9 @@ def computeDataOnBorder(N_guess, test_flag=0):
 
 
 if __name__ == '__main__':
+    
     start_time = time.time()
+
     args = parse_args()
     # Define the available systems
     available_systems = {
@@ -129,22 +131,34 @@ if __name__ == '__main__':
     if not os.path.exists(params.NN_DIR):
         os.makedirs(params.NN_DIR)
 
-    horizon = controller.N
+    N = 100
+    N_increment = 1
+    horizon = args['horizon']
+    if horizon:
+        N = horizon
+        N_increment = 0   
+    if horizon < 0:
+        raise ValueError('The horizon must be greater than 0')
 
     # DATA GENERATION
     if args['vboc']:
         print('Start data generation')
         with Pool(params.cpu_num) as p:
             # inputs --> (horizon, flag to compute only the initial state)
-            data = p.starmap(computeDataOnBorder, [(horizon, 0)] * params.prob_num)
+            # TRIAL --> uniform sampling of the initial state --> test_flag = 1
+            res = p.starmap(computeDataOnBorder, [(N, 1)] * params.prob_num)
 
-        x_data = [i for i in data if i is not None]
-        x_save = np.array([i for f in x_data for i in f])
+        data, traj = zip(*res)
+        x_data = np.array([i for i in data if i is not None])
+        # x_save = np.array([i for f in x_data for i in f])
+        x_traj = [i for i in traj if i is not None]
 
         solved = len(x_data)
-        print('Solved/tot: %.3f' % (solved / params.prob_num))
-        print('Saved/tot: %.3f' % (len(x_save) / (solved * horizon)))
-        np.save(params.DATA_DIR + str(model.nq) + 'dof_vboc', np.asarray(x_save))
+        print('Solved/numb of problems: %.3f' % (solved / params.prob_num))
+        # print('Saved/tot: %.3f' % (len(x_save) / (solved * N)))
+        # print('Total number of points: %d' % len(x_save))
+        np.save(params.DATA_DIR + str(model.nq) + 'dof_vboc', np.asarray(x_data))
+        np.save(params.DATA_DIR + str(model.nq) + 'dof_traj', np.asarray(x_traj))
 
     # TRAINING
     if args['training']:
@@ -176,8 +190,9 @@ if __name__ == '__main__':
         # Compute the test data
         print('Generation of testing data (only x0*)')
         with Pool(params.cpu_num) as p:
-            data = p.starmap(computeDataOnBorder, [(horizon, 1)] * params.test_num)
+            data = p.starmap(computeDataOnBorder, [(N, 1)] * params.test_num)
 
+        data, _ = zip(*data)
         x_test = np.array([i for i in data if i is not None])
         y_test = np.linalg.norm(x_test[:, model.nq:], axis=1).reshape(len(x_test), 1)
         x_test[:, :model.nq] = (x_test[:, :model.nq] - mean) / std
@@ -186,30 +201,32 @@ if __name__ == '__main__':
         print('RMSE on Test data: %.5f' % rmse_test)
 
         # Safety margin
-        safety_margin = np.amax(out_test - y_test) / y_test
+        safety_margin = np.amax((out_test - y_test) / y_test)
         print(f'Maximum error wrt test data: {safety_margin:.5f}')
 
         # Save the model
         torch.save({'mean': mean, 'std': std, 'model': nn_model.state_dict()},
                    params.NN_DIR + 'model_' + str(model.nq) + 'dof.pt')
-        
-        # Save relevant data
-        with(open('new_' + str(model.nq) + 'dof_vboc.pkl', 'wb')) as f:
-            pickle.dump({'training_evol': evolution,
-                         'outputs': out_test, 
-                         'y_test': y_test,
-                         'alpha': safety_margin}, f)
 
         print('\nPlot the loss evolution')
         # Plot the loss evolution
         plt.figure()
         plt.plot(evolution)
-        plt.show()
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title(f'Training evolution, horion {N}')
+        plt.savefig(params.DATA_DIR + f'evolution_{N}.png')
 
     # PLOT THE VIABILITY KERNEL
     if args['plot']:
         nn_data = torch.load(params.NN_DIR + 'model_' + str(model.nq) + 'dof.pt')
         nn_model = NeuralNetwork(model.nx, (model.nx - 1) * 100, 1)
         nn_model.load_state_dict(nn_data['model'])
-        plot_viability_kernel(model.nq, params, nn_model, nn_data['mean'], nn_data['std'])
-        plt.show()
+        plot_viability_kernel(model.nq, params, nn_model, nn_data['mean'], nn_data['std'], N)
+    plt.show()
+
+    elapsed_time = time.time() - start_time
+    hours = int(elapsed_time // 3600)
+    minutes = int((elapsed_time % 3600) // 60)
+    seconds = int(elapsed_time % 60)
+    print(f'Elapsed time: {hours}:{minutes:2d}:{seconds:2d}')

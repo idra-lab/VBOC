@@ -10,6 +10,8 @@ def parse_args():
                         help='Systems to test. Available: pendulum, double_pendulum, triple_pendulum')
     parser.add_argument('-v', '--vboc', action='store_true',
                         help='Compute data on border of the viability kernel')
+    parser.add_argument('--horizon', type=int, default=False, const=100, nargs='?',
+                        help='Horizon of the optimal control problem')
     parser.add_argument('-t', '--training', action='store_true',
                         help='Train the neural network model that approximates the viability kernel')
     parser.add_argument('-p', '--plot', action='store_true',
@@ -21,7 +23,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=4096,
                         help='Batch size for the neural network')
     parser.add_argument('--beta', type=float, default=0.95,
-                        help='Beta for the neural network')
+                        help='Low-pass filter for the loss function')
     return vars(parser.parse_args())
 
 

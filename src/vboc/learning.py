@@ -81,7 +81,7 @@ class RegressionNN:
         return y_pred, np.sqrt(np.mean((y_pred - y_test)**2))
 
 
-def plot_viability_kernel(nq, params, model, mean, std, grid=1e-2):
+def plot_viability_kernel(nq, params, model, mean, std, horizon=100, grid=1e-2):
     # Create the grid
     q, v = np.meshgrid(np.arange(params.q_min, params.q_max, grid),
                        np.arange(params.dq_min, params.dq_max, grid))
@@ -115,4 +115,5 @@ def plot_viability_kernel(nq, params, model, mean, std, grid=1e-2):
             plt.xlabel('q_' + str(i + 1))
             plt.ylabel('dq_' + str(i + 1))
             plt.grid()
-            plt.title(f"Classifier section joint {i + 1}")
+            plt.title(f"Classifier section joint {i + 1}, horizon {horizon}")
+            plt.savefig(params.DATA_DIR + f'{i + 1}dof_{horizon}_BRS.png')
