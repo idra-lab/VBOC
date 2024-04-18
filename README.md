@@ -5,11 +5,6 @@ The algorithms use Optimal Control Problems (OCPs) to generate training data and
 
 ## Algorithms
 
-### Active Learning (AL)
-
-The Active Learning algorithm, referred to as "AL" solves OCPs for system's initial states to verify from which of these states it is possible to stop (reach the zero-velocity set). 
-AL leverages then Active Learning techniques to iteratively select batches of new states to be tested to maximize the resulting NN classifier accuracy.
-
 ### Viability-Boundary Optimal Control (VBOC)
 
 The Viability-Boundary Optimal Control algorithm, referred to as "VBOC," utilizes OCPs to directly compute states that lie exactly on the boundary of the viability set and uses an NN regressor to approximate the set.
@@ -19,40 +14,38 @@ The Viability-Boundary Optimal Control algorithm, referred to as "VBOC," utilize
 The Hamilton-Jacoby Reachability algorithm, referred to as "HJB," is an adaptation of a reachability algorithm presented in the paper "Recursive Regression with Neural Networks: Approximating the HJI PDE Solution" by V. Rubies-Royo and C. Tomlin. 
 HJR computes the solution of the Hamilton-Jacoby-Isaacs (HJI) Partial Differential Equation (PDE) through recursive regression. NN classifiers are employed to approximate the set.
 
-## Additional Information
+### Active Learning (AL)
 
-For more details, please refer to the paper "VBOC: Learning the Viability Boundary of a Robot Manipulator using Optimal Control" by A. La Rocca, M. Saveriano, and A. Del Prete. The paper provides analysis and comparison of the algorithms mentioned above. 
+The Active Learning algorithm, referred to as "AL" solves OCPs for system's initial states to verify from which of these states it is possible to stop (reach the zero-velocity set). 
+AL leverages then Active Learning techniques to iteratively select batches of new states to be tested to maximize the resulting NN classifier accuracy.
+
+## Installation
+- Clone the repository\
+`git clone https://github.com/idra-lab/VBOC.git`
+- Install the requirements\
+`pip install -r requirements.txt`
+- Follow the instructions to install [CasADi](https://web.casadi.org/get/), [Acados](https://docs.acados.org/installation/index.html) and [Pytorch](https://pytorch.org/get-started/locally/).
+
+# Usage
+Run the script `main.py` inside the `scripts` folder. One can consult the help for the available options:
+```
+cd scripts
+python3 main.py --help
+```
+For example:
+- find the states on the boundary of the viability kernel through VBOC
+```
+python3 main.py -v
+```
+- use NN regression to learn an approximation of the N-control invariant set
+```
+python3 main.py -t
+```
 
 ## References
 
-- A. La Rocca, M. Saveriano, A. Del Prete, "VBOC: Learning the Viability Boundary of a Robot Manipulator using Optimal Control," arXiv:2305.07535 [cs.RO], 2023. Available at: http://arxiv.org/abs/2305.07535
-- V. Rubies-Royo and C. Tomlin, "Recursive Regression with Neural Networks: Approximating the HJI PDE Solution," in 5th International Conference on Learning Representations, 2017
+- A. La Rocca, M. Saveriano, A. Del Prete, "VBOC: Learning the Viability Boundary of a Robot Manipulator using Optimal Control", IEEE Robotics and Automation Letters, 2023 
+- V. Rubies-Royo and C. Tomlin, "Recursive Regression with Neural Networks: Approximating the HJI PDE Solution", in 5th International Conference on Learning Representations, 2017
 - A. Chakrabarty, C. Danielson, S. D. Cairano, and A. Raghunathan, "Active Learning for Estimating Reachable Sets for Systems With Unknown Dynamics", IEEE Transactions on Cybernetics, 2020
 
-## Dependencies
-
-The algorithms are implemented in Python and they rely on:
-
-- [PyTorch with CUDA](https://pytorch.org/) for the NNs training
-- [ACADOS](https://docs.acados.org/python_interface/) to solve the OCPs
-- [matplotlib](https://pypi.org/project/matplotlib/), [numpy](https://pypi.org/project/numpy/), [scipy](https://pypi.org/project/scipy/), [casadi](https://pypi.org/project/casadi/), [urdf2casadi](https://pypi.org/project/urdf2casadi/) (optional)
-
-## Usage
-
-The main folder contains scripts for the generation of test data and for the comparison of the performance of the algorithms. The subfolders "AL", "VBOC" and "HJR" contain the implementation of the different algorithms for the computation of the Viability Kernels of 1, 2 and 3 DOFs systems.
-
-Work in progress: in the "VBOC" folder you can also find other subfolders containing first studies on the application of VBOC to problems with cartesian constraints, to an UR5 robot manipulator, and some first tests on the usage of the learned sets to ensure recursive feasibility with Model Predictive Control.
-
-To try the algorithms and compare their performance you have to first generate the test data for the selected system (either "pendulum", "doublependulum", "triplependulum") in the main folder:
-```
-python3 <selectedsystem>_testdata.py
-```
-then compute the set with the three algorithms ("al", "vboc", "hjr") within the relative subfolder:
-```
-python3 <selectedsystem>_<selectedalgorithm>.py
-```
-and then compare the resulting set approximations:
-```
-python3 <selectedsystem>_comparison.py
-```
 

@@ -28,7 +28,7 @@ X_test = np.load('data2_test.npy')
 model_dir = NeuralNetDIR(4, 300, 1).to(device)
 criterion_dir = nn.MSELoss()
 model_dir.load_state_dict(torch.load('VBOC/model_2dof_vboc'))
-data_reverse = np.load('VBOC/data_2dof_vboc.npy')
+data_reverse = np.load('VBOC/2dof_vboc.npy')
 mean_dir = torch.load('VBOC/mean_2dof_vboc')
 std_dir = torch.load('VBOC/std_2dof_vboc')
 
