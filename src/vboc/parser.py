@@ -10,7 +10,7 @@ def parse_args():
                         help='Systems to test. Available: pendulum, double_pendulum, triple_pendulum')
     parser.add_argument('-v', '--vboc', action='store_true',
                         help='Compute data on border of the viability kernel')
-    parser.add_argument('--horizon', type=int, default=False, const=100, nargs='?',
+    parser.add_argument('--horizon', type=int, default=100,
                         help='Horizon of the optimal control problem')
     parser.add_argument('-t', '--training', action='store_true',
                         help='Train the neural network model that approximates the viability kernel')
